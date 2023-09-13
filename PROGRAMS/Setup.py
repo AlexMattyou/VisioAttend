@@ -45,5 +45,6 @@ path_entry.focus()
 b = ctk.CTkButton(window, text ='Download',font = ("Helvetica",25), command=lambda: print(install_path.get()), corner_radius = 5)
 b.pack(pady = 10)
 
+window.iconbitmap('assets/visioattend.ico')
 
 window.mainloop()
