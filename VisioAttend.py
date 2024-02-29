@@ -154,7 +154,7 @@ class App:
                 thread.start()
             else: 
                 self.addLog('  Using IP Camera  ')
-                via.storeIP(port)
+                via.settings('cameraIP',port)
                 thread = Thread(target=via.ipRun, args=(port, self))
                 thread.start()
         else:
@@ -216,7 +216,7 @@ class App:
 def load_visioattend():
     import VIAmodule as via
     app.addLog('<  visioattend loaded ✅  >', 0)
-    ipAdd = via.returnIP()
+    ipAdd = via.settings("cameraIP")
     app.IPaddress.set(ipAdd)
     app.rootLoc = via.rootLoc
     app.addLog(f'Root Location: {app.rootLoc}')

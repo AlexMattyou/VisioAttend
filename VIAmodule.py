@@ -7,45 +7,28 @@ import json
 
 rootLoc = os.path.dirname(os.path.realpath(__file__))
 
-def cryptStr(inputValue, type='decrypt'):
-    from cryptography.fernet import Fernet
-    if type == 'decrypt':
-        code, key = inputValue
-        fernet = Fernet(key.encode())
-        return fernet.decrypt(code.encode()).decode()
-    key = Fernet.generate_key()
-    fernet = Fernet(key)
-    code = fernet.encrypt(inputValue.encode())
-    return (code.decode(), key.decode())
-def returnIP():
-    config = pd.read_json(rootLoc+'config.json')
-    if config['cameraIP']['address']:
-        address = config['cameraIP']['address']
-        key = config['cameraIP']['key']
-        cameraIP = cryptStr((address, key))
-        return cameraIP
-    return 0
-def storeIP(code_key):
-    code,key = cryptStr(code_key, type='encrypt')
-    config = pd.read_json(rootLoc+'config.json')
-    config['cameraIP']['address'] = code
-    config['cameraIP']['key'] = key
-    config.to_json(rootLoc+'config.json')
-    return 1
+# modify the config.json file
+def settings(option, store = 0):
+    with open('config.json', 'r') as file:
+        data = json.load(file)
+    if store:
+        data[option] = store
+    else:
+        return data[option]
+    with open('config.json', 'w') as file:
+        json.dump(data, file, indent=4)
         
 # returns list of files in a folder(path)
-# used only in local mode
-def fileList(path, obj = None):
-    imgList = []
-    for root,dirs,files in os.walk(path):
-        obj.addLog(f"Stacking images: {files}")
-        for file in files:
-            filePath = f"{root}/{file}"
-            imgList.append(filePath)
-    return imgList
+def listFile(path, obj = None):
+    return os.listdir(path)
 
 # capture the current scene
-def capture(port = 0, step=(30, 500000), threshold = 100000, memory = 200, kernel = 5, savePath="images/before", obj=None):
+def capture(port = 0, threshold = 100000, obj=None):
+    step = settings('captureMaxMin')
+    kernel = settings('captureKernel')
+    historyLimit = settings('captureHistoryLimit')
+    savePath="images/before"
+    
     preFrame = None
     cap = cv2.VideoCapture(port)
     count = 0
@@ -67,7 +50,7 @@ def capture(port = 0, step=(30, 500000), threshold = 100000, memory = 200, kerne
                     count  = 1
                     continue
                 history.append(motion)
-                if len(history) > memory:
+                if len(history) > historyLimit:
                     history.pop(0)
                 motionMean =sum(history)/len(history)
                 threshold = round(motionMean * 2)

@@ -1,12 +1,18 @@
-import cv2
+from VIAmodule import *
 
-def capture(port = 0, step=(0, 500000), threshold = 'auto', memory = 200, kernel = 5):
-    if threshold == 'auto':
-        threshold = 100000
+def capture(port = 0, threshold = 100000, obj=None):
+    step = settings('captureMaxMin')
+    kernel = settings('captureKernel')
+    historyLimit = settings('captureHistoryLimit')
+    savePath="images/before"
+    
     preFrame = None
     cap = cv2.VideoCapture(port)
     count = 0
     history = []
+    imgList = os.listdir(rootLoc+savePath)
+    imgList = [int(i.split('.')[0]) for i in imgList] if imgList else [0]
+    nextImage = max(imgList) + 1
     while True:
         success, frame = cap.read()
         global image
@@ -21,17 +27,17 @@ def capture(port = 0, step=(0, 500000), threshold = 'auto', memory = 200, kernel
                     count  = 1
                     continue
                 history.append(motion)
-                if len(history) > memory:
+                if len(history) > historyLimit:
                     history.pop(0)
                 motionMean =sum(history)/len(history)
-                threshold = round(motionMean * 2.5)
+                threshold = round(motionMean * 2)
                 if ((motion > threshold) or (count >= step[1]))and count >= step[0]:
                     # print(count '     ' threshold  '     '  motion)
                     count = 0
-                    cv2.imwrite('output_image.jpg', frame)
+                    cv2.imwrite(rootLoc+savePath+ f'/{nextImage}.png', frame)
+                    nextImage += 1
                     print('Running')
             # Update the previous frame
             preFrame = gray
         # cv2.imshow('Frame'  frame)
     cap.release()
-capture(port = "http://192.168.101.176:8080/video")

@@ -1,12 +1,7 @@
 {
-    "cameraIP": {
-        "address": "gAAAAABlzerjoG9q2jGVCeaazUTlTEl7zREBpvsMEddZ1rWT8w6guDPY0n_LxR_DjsjA0_YzP3eXF y7d0GOIr8OFVHOooAA4L6rbrwP7C_67sBOpsHdqrTDAnaOY5TUj9z8D_mYxbtR",
-        "key": "LqEoh8O1YbMOiWNpBTQGHo3n4mTxxJnOXpT1zDiMh9A=",
-        "rootLoc": null
-    },
-    "settings": {
-        "address": null,
-        "key": null,
-        "rootLoc": "D:\/Projects\/VisioAttend\/"
-    }
+    "cameraIP": "",
+    "rootLoc": "D:/Projects/VisioAttend/",
+    "captureMaxMin": [30, 500000],
+    "captureHistoryLimit": 200,
+    "captureKernel": 5,
 }
