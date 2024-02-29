@@ -5,11 +5,7 @@ import pandas as pd
 from datetime import datetime,time
 import json
 
-def getRootLoc(): # return root location
-    with open("config.json", 'r') as f:
-        data = json.load(f)
-        return data["settings"]["rootLoc"]
-rootLoc = getRootLoc()
+rootLoc = os.path.dirname(os.path.realpath(__file__))
 
 def cryptStr(inputValue, type='decrypt'):
     from cryptography.fernet import Fernet
