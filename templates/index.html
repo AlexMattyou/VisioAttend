@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Send JSON Data</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <button id="sendButton">Send JSON Data</button>
+    <script>
+        document.getElementById('sendButton').addEventListener('click', function() {
+            const jsonData = { key1: 'value1', key2: 'value2' };
+            axios.post('/send_json', jsonData)
+                .then(response => {
+                    console.log('Response from server:', response.data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+    </script>
+</body>
+</html>

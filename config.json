@@ -3,5 +3,5 @@
     "rootLoc": "D:/Projects/VisioAttend/",
     "captureMaxMin": [30, 500000],
     "captureHistoryLimit": 200,
-    "captureKernel": 5,
+    "captureKernel": 5
 }
