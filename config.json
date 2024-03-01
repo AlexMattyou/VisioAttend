@@ -1,6 +1,5 @@
 {
-    "cameraIP": "",
-    "rootLoc": "D:/Projects/VisioAttend/",
+    "cameraIP": "http://192.168.209.89:8080/video",
     "captureMaxMin": [30, 500000],
     "captureHistoryLimit": 200,
     "captureKernel": 5

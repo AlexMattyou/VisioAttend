@@ -2,6 +2,7 @@ import cv2
 import face_recognition as face
 import os
 import pandas as pd
+from time import sleep
 from datetime import datetime,time
 import json
 
@@ -17,88 +18,49 @@ def settings(option, store = 0):
         return data[option]
     with open('config.json', 'w') as file:
         json.dump(data, file, indent=4)
-        
-# returns list of files in a folder(path)
-def listFile(path, obj = None):
-    return os.listdir(path)
 
 # capture the current scene
-def capture(port = 0, threshold = 100000, obj=None):
-    step = settings('captureMaxMin')
-    kernel = settings('captureKernel')
-    historyLimit = settings('captureHistoryLimit')
-    savePath="images/before"
-    
-    preFrame = None
+def capture(port = 0, interval = 60, imageNumber = 0):
+    port = "http://192.168.209.89:8080/video"
+    savePath= rootLoc + '\\images\\captured\\'
     cap = cv2.VideoCapture(port)
-    count = 0
-    history = []
-    imgList = os.listdir(rootLoc+savePath)
-    imgList = [int(i.split('.')[0]) for i in imgList] if imgList else [0]
-    nextImage = max(imgList) + 1
-    while True:
-        success, frame = cap.read()
-        global image
-        count+= 1
-        if success:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gray = cv2.GaussianBlur(gray, (kernel, kernel), 0)
-            if preFrame is not None:
-                frameDiff = cv2.absdiff(preFrame, gray)
-                motion = round(cv2.sumElems(frameDiff)[0])
-                if motion == 0:
-                    count  = 1
-                    continue
-                history.append(motion)
-                if len(history) > historyLimit:
-                    history.pop(0)
-                motionMean =sum(history)/len(history)
-                threshold = round(motionMean * 2)
-                if ((motion > threshold) or (count >= step[1]))and count >= step[0]:
-                    # print(count '     ' threshold  '     '  motion)
-                    count = 0
-                    cv2.imwrite(rootLoc+savePath+ f'/{nextImage}.png', frame)
-                    nextImage += 1
-                    print('Running')
-            # Update the previous frame
-            preFrame = gray
-        # cv2.imshow('Frame'  frame)
+    success, frame = cap.read()
+    if success:
+        imageNumber += 1
+        print('Running')
+        cv2.imwrite(savePath + f"{imageNumber}.png", frame)
     cap.release()
+    sleep(interval)
+    capture(port, interval, imageNumber)
+    
 def encodeFace(frame):
     encoded = face.face_encodings(frame)
     print(len(encoded))
     return encoded
+
 def compareFace(x, y):
     distance = face.face_distance(x, y)
     match = face.compare_faces(x, y)
     return (distance, match)
 
 # encodes faces from students folder
-def createFaceMesh(x, obj=None):
-    if not obj.stop:
-        if obj: obj.addLog("<  Encoding Started  >")
-        if obj: obj.addLog("Encoding...")
-        pandasData = []
-        faceList = os.listdir(rootLoc+"Students")
-        print("Images in folder:", faceList)
-        for file in faceList:
-            sID, sName = file.split('.')[0].split('_')
-            face = cv2.imread(rootLoc+"Students"+'/'+file)
-            encode = encodeFace(face)
-            pandasData.append((sID, sName, encode))
-            if obj: obj.addLog("Face encoded: "+str(sName), 0)
-        # print(pandasData)
-        dataframe = pd.DataFrame(pandasData)
-        dataframe.columns = ['ID', 'Name', 'FaceData']
-        dataframe.to_json(rootLoc+"faceMesh.json")
-        students = dataframe.loc[: ['ID', 'Name']]
-        students.to_csv(rootLoc+'Data/Template/students.csv', index=False)
-        # print(students)
-        # print("Encoding Successful!")
-        if obj: obj.addLog("<  Encoding Success ✅  >", 0)
-    else:
-        if obj: obj.addLog("<  Process Stopped  >")
-        return 0
+def createFaceMesh():
+    pandasData = []
+    faceList = os.listdir(rootLoc+"\\images\\students")
+    print("Images in folder:", faceList)
+    for file in faceList:
+        sID, sName = file.split('.')[0].split('_')
+        print(sID, sName)
+        face = cv2.imread(rootLoc+"\\images\\students\\"+file)
+        encode = encodeFace(face)
+        pandasData.append((sID, sName, encode))
+    dataframe = pd.DataFrame(pandasData)
+    dataframe.columns = ['ID', 'Name', 'FaceData']
+    dataframe.to_json(rootLoc+"faceMesh.json")
+    students = dataframe.loc[:,['ID', 'Name']]
+    students.to_csv(rootLoc+'Data/template/students.csv', index=False)
+    return 1
+    
 def returnFaceMesh():
     return pd.read_json(rootLoc+'faceMesh.json')
 
@@ -150,8 +112,8 @@ def predictFace(frame, obj=None):
     return tuple(set(predictedFaces))
 
 def dayTimeStamp(currentTime):
-    if time(9, 0) >= currentTime or time(16, 30) <= currentTime: return  1
-    elif time(9, 0) <= currentTime <= time(9, 50): return 1
+    # if time(9, 0) >= currentTime or time(16, 30) <= currentTime: return  0
+    if time(9, 0) <= currentTime <= time(9, 50): return 1
     elif time(9, 50) <= currentTime <= time(10, 40): return 2
     # elif time(10, 40) <= currentTime <= time(10, 55): return 0
     elif time(10, 55) <= currentTime <= time(11, 45): return 3
