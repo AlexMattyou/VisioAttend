@@ -5,6 +5,7 @@ import pandas as pd
 from time import sleep
 from datetime import datetime, time
 import json
+import threading
 
 rootLoc = os.path.dirname(os.path.realpath(__file__))
 
@@ -536,7 +537,21 @@ class App:
             self.main_w = self.mainwindow.winfo_reqwidth()
             self.main_h = self.mainwindow.winfo_reqheight()
             self.center_map = self.mainwindow.bind("<Map>", self.center)
+        imageThread = threading.Thread(target=self.changeImage())
+        imageThread.start()
         self.mainwindow.mainloop()
+        
+    def changeImage(self):
+        # images\predicted\empty.png
+        imgLoc = rootLoc + "\\images\\predicted\\"
+        if os.path.exists(imgLoc + "predicted.png"):
+            self.image.configure(image=imgLoc + "predicted.png")
+        else:
+            self.image.configure(image=imgLoc + "empty.png")
+        self.root.after(1000, self.update_image)
+        sleep(1)
+        self.changeImage(self)
+        
 
     def btnStart(self):
         pass
