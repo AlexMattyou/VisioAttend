@@ -1,0 +1,46 @@
+@import url('main.css');
+
+nav {
+    height: 40px;
+    background-color: aliceblue;
+}
+
+#first{
+    margin: 20px;
+    background-color: blue;
+}
+
+#second {
+    background-color: brown;
+    width: auto;
+    background-color: aqua;
+    height: auto;
+    margin: 20px;
+}
+
+#third{
+    background-color: bisque;
+    width: auto;
+}
+
+.flexLeft {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around; /* Adjust as needed */
+    align-items: center; /* Adjust as needed */
+}
+#view p{
+    margin: 10px 20px;
+    padding: 0;
+}
+
+#view div{
+    margin: 10px;
+    background-color: blueviolet;
+    width: calc(370px * (2400 / 1080)); /* Calculate width based on height and image aspect ratio */
+    height: 370px; /* Height of the parent div */
+    background-image: url('../empty.png'); /* URL of your image */
+    background-size: contain; /* Scale the image to maintain its aspect ratio and fit inside the div */
+    background-repeat: no-repeat; /* Prevent the image from repeating */
+    background-position: center; /* Center the image within the div */
+  }

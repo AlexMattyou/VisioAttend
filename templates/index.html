@@ -1,22 +1,36 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Send JSON Data</title>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-</head>
-<body>
-    <button id="sendButton">Send JSON Data</button>
-    <script>
-        document.getElementById('sendButton').addEventListener('click', function() {
-            const jsonData = { key1: 'value1', key2: 'value2' };
-            axios.post('/send_json', jsonData)
-                .then(response => {
-                    console.log('Response from server:', response.data);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-        });
-    </script>
-</body>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>VisioAttend</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="keywords"content="Visio Attend, GraceCOE, face-attendence">
+    <meta name="author"content="Alex Matthew">
+    <meta name="description"content="Automated attendence using face-recognigation system">
+    <script defer src="script.js"></script>
+    <link href="style.css" rel="stylesheet"/>
+    <link rel="icon" href="../icon.ico">
+  </head>
+  <body>
+    <nav>VisioAttend</nav>
+    <div class="flexLeft" id="body">
+      <div class="flexTop" id="first">
+        <section id="view">
+          <p>viewport</p>
+          <div></div>
+        </section>
+        <div>
+          <section></section>
+          <section></section>
+        </div>
+        <section id="options"></section>
+      </div>
+      <div class="flexTop" id="second">
+        <section id="output"></section>
+        <section id="input"></section>
+      </div>
+      <div class="flexTop" id="third"></div>
+    </div>
+  </body>
 </html>
+<!-- |⁞º▪◇⁺⁻₊∙⋅⨾ -->
