@@ -1,6 +1,12 @@
 import os
 
 # Get the directory of the current Python file
-current_dir = os.path.dirname(os.path.realpath(__file__))
+rootLoc = os.path.dirname(os.path.realpath(__file__))
+imgList = []
+for root, dirs, files in os.walk("D:\Projects\VisioAttend\images\students"):
+    imgList = [f.split('.')[0] for f in files]
+    # images\students
 
-print(current_dir)
+
+
+print(imgList)

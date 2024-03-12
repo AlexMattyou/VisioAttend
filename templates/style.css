@@ -1,46 +1,171 @@
-@import url('main.css');
+@import url('main.css'); 
 
 nav {
     height: 40px;
     background-color: aliceblue;
 }
 
-#first{
-    margin: 20px;
-    background-color: blue;
-}
-
-#second {
-    background-color: brown;
+section {
     width: auto;
-    background-color: aqua;
-    height: auto;
-    margin: 20px;
-}
-
-#third{
-    background-color: bisque;
-    width: auto;
-}
-
-.flexLeft {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around; /* Adjust as needed */
-    align-items: center; /* Adjust as needed */
-}
-#view p{
-    margin: 10px 20px;
-    padding: 0;
-}
-
-#view div{
+    height: 70vh;
+    flex: 1;
     margin: 10px;
-    background-color: blueviolet;
-    width: calc(370px * (2400 / 1080)); /* Calculate width based on height and image aspect ratio */
-    height: 370px; /* Height of the parent div */
-    background-image: url('../empty.png'); /* URL of your image */
-    background-size: contain; /* Scale the image to maintain its aspect ratio and fit inside the div */
-    background-repeat: no-repeat; /* Prevent the image from repeating */
-    background-position: center; /* Center the image within the div */
-  }
+    padding: 5px;
+    background-color:var(--c3);
+}
+
+section * {
+    text-align: left;
+}
+
+section h4 {
+    padding: 10px;
+    margin: 0;
+    background-color: var(--c5);
+    color: var(--c2);
+}
+
+
+#body {
+    margin: 10px;
+    width: 90%;
+    display: grid;
+    grid-template-columns: 70% 30%;
+    grid-template-rows: auto;
+    grid-gap: 1px 1px;  
+}
+
+#students{
+    grid-column: 1;
+}
+
+#edit{
+    grid-column: 2;
+}
+
+#bottom {
+    height: 10vh;
+    display: flex;
+    width: 88%;
+    justify-content: space-between;
+}
+
+.box {
+    display: flex;
+    justify-content: space-between;
+    width: 15vw;
+    background-color: var(--c4);
+    margin: 4px 4px;
+    padding: 8px;
+    border:0;
+    outline: 0;
+    color: var(--c1);
+    font-weight: bold;
+}
+
+.green {
+    background-color: var(--p);
+    color: var(--c1);
+}
+.blue {
+    background-color: var(--o);
+    color: var(--c1);
+}
+.yellow {
+    background-color: var(--l);
+    color: var(--c1);
+}
+.red {
+    background-color: var(--a);
+    color: var(--c1);
+}
+
+.contain {
+    background-color: var(--c3);
+    height: 91%;
+    padding: 2px;
+}
+
+#students .contain{
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-content: flex-start;
+    row-gap: 2px 2px;
+}
+
+#change *{
+    text-align: center;
+}
+
+#edit .contain *{
+    text-align: center;
+}
+
+.name {
+    font-size:xx-large;
+    padding: 0;
+    margin: 40px 0px 0px 0px;
+}
+
+.id {
+    margin: 5px 0px 30px 0px;
+}
+
+.type {
+    margin: 30px 0px 0px 0px;
+}
+
+#edit hr {
+    border: none;
+    height: 8px;
+    background-color:var(--p);
+    border-radius: 5px;
+    margin: 0 40px;
+}
+
+#edit .contain div{
+
+}
+
+#edit .contain div button{
+    width: 140px;
+    font-size: x-large;
+    border: none;
+    outline: none;
+    margin: 10px;
+    padding: 5px;
+    font-weight: bold;
+}
+
+#legend button {
+    position: relative;
+    top: 7px;
+    height: 30px;
+    width: 30px;
+    outline: none;
+    border: none;
+    border-radius: 40px;
+
+}
+#legend{
+    text-align: center;
+    font-size: 20px;
+    padding: 10px;
+}
+
+#sync button {
+    text-align: center;
+    width: 140px;
+    font-size: x-large;
+    border: none;
+    outline: none;
+    margin: 10px;
+    padding: 5px;
+    font-weight: bold;
+}
+
+#sync{
+    margin: 0px 30px;
+}

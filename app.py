@@ -4,7 +4,8 @@ app = Flask(__name__)
   
 @app.route("/send_json") 
 def index(): 
-   return render_template("index.html") 
+   return render_template("index.html")
+
 
 @app.route('/send_json', methods=['POST'])
 def receive_json():

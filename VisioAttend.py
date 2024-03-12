@@ -178,7 +178,7 @@ class App:
         import os
         from datetime import datetime
         date = datetime.now().date()
-        fileName = f"{date.year} {date.month} {date.day}.csv"
+        fileName = f"{date.year}-{date.month}-{date.day}.csv"
         path = self.rootLoc+"Data/DayRecord/"+fileName
         path = os.path.realpath(path)
         self.addLog(f'opened [{path}]')

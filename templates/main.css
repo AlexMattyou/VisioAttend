@@ -1,30 +1,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Balsamiq+Sans&family=Fredoka+One&family=Luckiest+Guy&display=swap');
 :root{
-  --c1:rgba(15, 15, 20, 1);/*back-ground*/
-  --c2:rgba(229, 233, 236, 1);/*front*/
-  --c3:rgba(250, 131, 52, 1);/*color-2*/
-  --c4:rgba(114, 206, 255, 1);/*color-1*/
-  --c5:rgba(20, 20, 25, 1);/*shade-1*/
-  --c6:rgba(30, 30, 35, 1);/*shade-2*/
-  --c7:rgba(250, 131, 52, .3);/*color-1-glass*/
-  --c8:rgba(114, 206, 255, .3);/*color-2-glass*/
-  --h:'Balsamiq Sans';
-  --p:'Fredoka One';
-  --t:'Luckiest Guy';
+  --c1:#F0F5FE;
+  --c2:#191C24;
+  --c3:#262933;
+  --c4:#474965;
+  --c5:#EE6352;
+  --c6:#BB4E3F;
+  --p:rgb(58, 157, 93);
+  --o:rgb(77, 112, 188);
+  --l:rgb(182, 142, 62);
+  --a:rgb(182, 89, 75);
+  --th:'Balsamiq Sans';
+  --tp:'Fredoka One';
+  --tt:'Luckiest Guy';
 }
 body{
-  background-color: var(--c1);
+  background-color: var(--c2);
 }
 *{
   border-radius: 3px;
 }
 a{
-  color: var(--c4);
+  color: var(--c5);
   transition: color 300ms;
   text-decoration: none;
 }
 a:hover{
-  color: var(--c3);
+  color: var(--c6);
 }
 #logo{
   position: relative;
@@ -35,19 +37,7 @@ a:hover{
   display: inline;
 }
 div,nav,section,center{
-  color: var(--c2);
-  font-family: var(--h);
+  color: var(--c1);
+  font-family: var(--th);
 }
-@media only screen and (max-width: 600px){
-  #main{
-    margin: 0;
-    width: 100%;
-    background-color: blue;
-  }
-}
-@media only screen and (max-width: 1000px){
-  #main{
-    margin: 0;
-    width: 100%;
-  }
-}
+

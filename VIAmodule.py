@@ -6,6 +6,7 @@ from time import sleep
 from datetime import datetime, time
 import json
 import threading
+import shutil
 
 rootLoc = os.path.dirname(os.path.realpath(__file__))
 
@@ -24,7 +25,6 @@ def settings(option, store=0):
 
 # capture the current scene
 def capture(port=0, interval=60, imageNumber=0):
-    port = "http://192.168.209.89:8080/video"
     cap = cv2.VideoCapture(port)
     success, frame = cap.read()
     if success:
@@ -64,11 +64,12 @@ def createFaceMesh():
     dataframe.to_json(rootLoc + "\\faceMesh.json")
     students = dataframe.loc[:, ["ID", "Name"]]
     students.to_csv(rootLoc + "\\Data\\template\\students.csv", index=False)
+    createTemplate()
     return 1
 
 
 # returns list of faces in given image(frame)
-def predictFace(frame):
+def predictFace(frame, bgProcess=0):
     imageNumber = 0
     showBox = 1
     import numpy as np
@@ -101,7 +102,7 @@ def predictFace(frame):
             print(name, lowestDistance)
         else:
             name = "Unknown"
-        if showBox:
+        if not bgProcess:
             import random
 
             cv2.rectangle(
@@ -124,10 +125,11 @@ def predictFace(frame):
                 (255, 255, 255),
                 3,
             )
-    if showBox:
+    if not bgProcess:
         frame = cv2.resize(frame, (0, 0), fx=0.4, fy=0.4)
         imageNumber += 1
-        cv2.imwrite(rootLoc + "\\images\\predicted\\" + "show.png", frame)
+        cv2.imwrite(rootLoc + "\\images\\predicted\\" + "predicted.png", frame)
+        app.updateImage()
     print("Names predicted:", tuple(set(names)))
     return tuple(set(predictedFaces))
 
@@ -181,14 +183,14 @@ def createTemplate(default="daily"):
         df.to_csv(rootLoc + "\\Data\\Template\\dailyRecord.csv", index=False)
 
 
-def createRegister(type):
+def createRegister(type = 'D'):
     if type == "D":
         date = datetime.now().date()
         if date.strftime("%A") == "Sunday":
             print(" SUNDAY is a holiday ")
             return 0
         register = pd.read_csv(rootLoc + "\\Data\\Template\\dailyRecord.csv")
-        fileName = f"{date.year} {date.month} {date.day}.csv"
+        fileName = f"{date.year}-{date.month}-{date.day}.csv"
         register.to_csv(rootLoc + "\\Data\\DayRecord\\" + fileName, index=False)
 
 
@@ -204,8 +206,8 @@ def fileSearch(fileName, path):
 # put present to given name
 def putAttendence(names=[]):
     date = datetime.now()
-    fileName = f"{date.year} {date.month} {date.day}.csv"
-    path = rootLoc + "\\Data\\DayRecord"
+    fileName = f"{date.year}-{date.month}-{date.day}.csv"
+    path = rootLoc + "\\Data\\DayRecord\\"
     filePath = fileSearch(fileName, path)
     if filePath == 0:
         createRegister("D")
@@ -233,55 +235,12 @@ def putAttendence(names=[]):
     return filePath
 
 
-def start():
-    pass
-
-
-# local run
-def fileRun(imgList, obj=None):
-    for img in imgList:
-        frame = cv2.imread(img)
-        names = predictFace(frame, obj)  # list of (IDs) predicted
-        if obj and not obj.stop:
-            obj.addLog(f'predicted IDs from {img.split("/")[ 1]} [{names}]')
-        register = putAttendence(names, obj)
-        if register == 0:
-            return 0
-    if obj:
-        obj.addLog(f"<  Attendence Saved  >")
-
-
-# ip run
-def ipRun(port, obj=None):
-    imgList = capture(3, port, obj)
-    for img in range(len(imgList)):
-        try:
-            names = predictFace(imgList[img], obj)  # list of (ID  Names) predicted
-        except Exception as e:
-            if obj and not obj.stop:
-                obj.addLog(f"ERROR Code: 197\n  Camera IP not found  ")
-        if obj and not obj.stop:
-            obj.addLog(f"predicted IDs from capture {img} [{names}]")
-        register = putAttendence(names, obj)
-    if obj:
-        obj.addLog(f"<  Attendence Saved  >")
-    if register == 0:  # stop processing
-        return 0
-    else:
-        ipRun(port, obj)  # repeat
-
-
-def testRun(port, obj=None):
-    pass
-
-
-def run(port, obj=None):
-    pass
-
 
 #!/usr/bin/python3
+from PIL import Image
 import tkinter as tk
 from customtkinter import (
+    CTkImage,
     CTkButton,
     CTkCheckBox,
     CTkEntry,
@@ -290,7 +249,7 @@ from customtkinter import (
     CTkLabel,
     CTkScrollableFrame,
     CTkTabview,
-    CTkToplevel,
+    CTk
 )
 
 
@@ -298,15 +257,18 @@ class App:
     def __init__(self, master=None):
         
         # build ui
-        self.ctktoplevel1 = CTkToplevel(master, fg_color="#191C24")
+        self.ctktoplevel1 = CTk()
         self.ctktoplevel1.geometry("760x574")
         self.ctktoplevel1.resizable(False, False)
         self.ctktoplevel1.title("VisioAttend")
         
         #variables:
-        self.ipAddressStr = tk.StringVar(value="0")
-        self.minFrameGap = tk.StringVar(value="20")
-        self.maxFrameGap = tk.StringVar(value="300000")
+        self.ipAddressStr = tk.StringVar(value=settings("cameraIP"))
+        self.captureInterval = tk.IntVar(value=settings("captureInterval"))
+        self.bgProcess = tk.IntVar(value=settings("bgProcess"))
+        self.aboutStr = tk.StringVar(value="This is Visio Attend")
+        self.startOrStop = tk.StringVar(value="Start")
+        self.stop = 0
         
         self.viewFrame = CTkFrame(self.ctktoplevel1)
         self.viewFrame.configure(
@@ -323,7 +285,7 @@ class App:
         )
         cameraTab = self.tabView.add("Camera")
         self.image = CTkLabel(cameraTab)
-        self.image.configure(corner_radius=5, height=270, text=" ", width=600)
+        self.image.configure(corner_radius=5, height=270, width=600)
         self.image.pack(side="top")
         aboutTab = self.tabView.add("About")
         self.aboutFrame = CTkScrollableFrame(aboutTab, orientation="vertical")
@@ -331,7 +293,6 @@ class App:
             fg_color="#191C24", height=257, scrollbar_button_color="#191C24", width=690
         )
         self.aboutLabel = CTkLabel(self.aboutFrame)
-        self.aboutStr = tk.StringVar(value="This is Visio Attend")
         self.aboutLabel.configure(
             text="This is Visio Attend", textvariable=self.aboutStr
         )
@@ -353,7 +314,6 @@ class App:
         )
         self.ipLabel.pack(anchor="w", padx=10, pady="5 0", side="top")
         self.ipEntry = CTkEntry(self.ipFrame)
-        self.ipAddressStr = tk.StringVar(value="0")
         self.ipEntry.configure(
             fg_color="#191C24",
             font=CTkFont("system", None, None, "roman", False, False),
@@ -365,7 +325,6 @@ class App:
         )
         self.ipEntry.pack(anchor="e", padx="5 10", pady="0 10", side="top")
         self.startBtn = CTkButton(self.ipFrame)
-        self.startOrStop = tk.StringVar(value="Start")
         self.startBtn.configure(
             fg_color="#EE6352",
             font=CTkFont("Candara", 14, "bold", "roman", False, False),
@@ -390,7 +349,6 @@ class App:
         )
         self.optionsLabel.pack(anchor="w", padx=10, side="top")
         self.bg_process = CTkCheckBox(self.optionsFrame, onvalue=1, offvalue=0)
-        self.bgProcess = tk.IntVar()
         self.bg_process.configure(
             fg_color="#EE6352",
             hover_color="#BB4E3F",
@@ -402,28 +360,17 @@ class App:
         self.ctkframe2 = CTkFrame(self.optionsFrame)
         self.ctkframe2.configure(fg_color="#262933")
         self.ctklabel6 = CTkLabel(self.ctkframe2)
-        self.ctklabel6.configure(text="Frame Gap")
+        self.ctklabel6.configure(text="Frame Interval")
         self.ctklabel6.pack(padx="10 5", pady=10, side="left")
         self.ctkentry2 = CTkEntry(self.ctkframe2)
-        self.minFrameGap = tk.IntVar(value=20)
         self.ctkentry2.configure(
             fg_color="#191C24",
             font=CTkFont("system", None, None, "roman", False, False),
             justify="left",
-            textvariable=self.minFrameGap,
+            textvariable=self.captureInterval,
             width=80,
         )
         self.ctkentry2.pack(padx=5, pady=10, side="left")
-        self.ctkentry4 = CTkEntry(self.ctkframe2)
-        self.maxFrameGap = tk.IntVar(value=300000)
-        self.ctkentry4.configure(
-            fg_color="#191C24",
-            font=CTkFont("system", None, None, "roman", False, False),
-            justify="left",
-            textvariable=self.maxFrameGap,
-            width=80,
-        )
-        self.ctkentry4.pack(padx="5 10", pady=10, side="left")
         self.ctkframe2.pack(side="left")
         self.optionsFrame.grid(
             column=1, padx="5 10", pady="5 10", row=1, rowspan=2, sticky="nw"
@@ -500,75 +447,119 @@ class App:
 
         # Main widget
         self.mainwindow = self.ctktoplevel1
+        
+        imgThread = threading.Thread(target=self.updateImage)
+        imgThread.start()
 
-    def center(self, event):
-        wm_min = self.mainwindow.wm_minsize()
-        wm_max = self.mainwindow.wm_maxsize()
-        screen_w = self.mainwindow.winfo_screenwidth()
-        screen_h = self.mainwindow.winfo_screenheight()
-        """ `winfo_width` / `winfo_height` at this point return `geometry` size if set. """
-        x_min = min(
-            screen_w,
-            wm_max[0],
-            max(
-                self.main_w,
-                wm_min[0],
-                self.mainwindow.winfo_width(),
-                self.mainwindow.winfo_reqwidth(),
-            ),
-        )
-        y_min = min(
-            screen_h,
-            wm_max[1],
-            max(
-                self.main_h,
-                wm_min[1],
-                self.mainwindow.winfo_height(),
-                self.mainwindow.winfo_reqheight(),
-            ),
-        )
-        x = screen_w - x_min
-        y = screen_h - y_min
-        self.mainwindow.geometry(f"{x_min}x{y_min}+{x // 2}+{y // 2}")
-        self.mainwindow.unbind("<Map>", self.center_map)
-
-    def run(self, center=False):
-        if center:
-            self.main_w = self.mainwindow.winfo_reqwidth()
-            self.main_h = self.mainwindow.winfo_reqheight()
-            self.center_map = self.mainwindow.bind("<Map>", self.center)
-        imageThread = threading.Thread(target=self.changeImage())
-        imageThread.start()
+    def run(self):
         self.mainwindow.mainloop()
         
-    def changeImage(self):
-        # images\predicted\empty.png
+    def updateImage(self):
         imgLoc = rootLoc + "\\images\\predicted\\"
         if os.path.exists(imgLoc + "predicted.png"):
-            self.image.configure(image=imgLoc + "predicted.png")
+            light_image = Image.open(imgLoc + "predicted.png")
+            dark_image = Image.open(imgLoc + "predicted.png")
         else:
-            self.image.configure(image=imgLoc + "empty.png")
-        self.root.after(1000, self.update_image)
-        sleep(1)
-        self.changeImage(self)
+            light_image = Image.open(imgLoc + "empty.png")
+            dark_image = Image.open(imgLoc + "empty.png")
         
+        my_image = CTkImage(light_image=light_image, dark_image=dark_image, size=(600, 270))
+        self.image.configure(self, image = my_image, text=' ')
+    
+    def preStart(self):
+        settings("cameraIP", str(self.ipAddressStr.get()))
+        settings("captureInterval", int(self.captureInterval.get()))
+        settings("bgProcess", int(self.bgProcess.get()))
+        cameraLoop = threading.Thread(target=capture, args=(self.ipAddressStr.get(), self.captureInterval.get(), 0))
+        cameraLoop.start()
+        # predictLoop = threading.Thread(target=self.startLoop())
+        # predictLoop.start()
+        
+    def preStop(self):
+        path = rootLoc + "\\images\\captured"
+        shutil.rmtree(path)
+        os.makedirs(path)
+        
+    def startLoop(self):
+        if self.stop:
+            return 0
+        path = rootLoc + "\\images\\captured\\"
+        imgList = []
+        for root, dirs, files in os.walk(path):
+            imgList = [int(f.split('.')[0]) for f in files]
+        if len(imgList) == 0:
+            sleep(10)
+            self.startLoop()
+        img = path + "\\" + str(min(imgList)) + ".png"
+        predictedFaces = predictFace(img, self.bgProcess)
+        putAttendence(predictedFaces)
+        os.remove(img)
+        self.startLoop()
 
     def btnStart(self):
-        pass
+        type = self.startOrStop.get()
+        if type == "Start":
+            self.stop = 0
+            self.startOrStop.set("Stop")
+            self.preStart()
+        else:
+            self.stop = 1
+            self.startOrStop.set("Start")
+            self.preStop()
+            
 
     def btnViewAll(self):
-        pass
+        path = rootLoc+"\\Data\\DayRecord"
+        path = os.path.realpath(path)
+        os.startfile(path)
 
     def btnViewToday(self):
-        pass
+        date = datetime.now().date()
+        fileName = f"{date.year}-{date.month}-{date.day}.csv"
+        path = rootLoc+"\\Data\\DayRecord\\"+fileName
+        if not os.path.exists(path):
+            createRegister()
+        path = os.path.realpath(path)
+        os.startfile(path)
 
     def btnStudents(self):
-        pass
+        path = rootLoc+"\\images\\Students"
+        path = os.path.realpath(path)
+        os.startfile(path)
 
     def btnEncode(self):
-        pass
+        encode_thread = threading.Thread(target=createFaceMesh)
+        encode_thread.start()
 
+from flask import Flask, render_template, request, jsonify, send_file, Response
+web = Flask(__name__)
+
+@web.route("/visioattend/register.csv") 
+def sendRegister():
+    date = datetime.now()
+    fileName = f"{date.year}-{date.month}-{date.day}.csv"
+    path = rootLoc + "\\Data\\DayRecord\\"
+
+    # Read the CSV file as a string
+    with open(path + fileName, 'r') as file:
+        csv_content = file.read()
+
+    return Response(csv_content, mimetype='text/plain')
+
+@web.route('/visioattend', methods=['POST'])
+def receive_json():
+    data = request.json  # Get JSON data sent from the client
+    print('Received JSON data:', data)
+    # Process the data as needed
+    print("yeay")
+    response_data = {'message': 'Data received successfully'}
+    return jsonify(response_data)
+
+def run_flask():
+    web.run(debug=False, use_reloader=False)
 
 if __name__ == "__main__":
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
     app = App()
     app.run()
