@@ -1,5 +1,5 @@
 {
-    "cameraIP": "0",
-    "captureInterval": 1,
+    "cameraIP": "http://192.168.189.4:8080/",
+    "captureInterval": 15,
     "bgProcess": 0
 }

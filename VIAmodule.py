@@ -24,21 +24,25 @@ def settings(option, store=0):
 
 
 # capture the current scene
-def capture(port=0, interval=60, imageNumber=0):
+def capture(port=0, interval=60, imageNumber=0, obj=None):
+    if obj.stop:
+        return 1
+    port = "http://192.168.189.4:8080/video"
     cap = cv2.VideoCapture(port)
     success, frame = cap.read()
+    print('ready')
     if success:
         imageNumber += 1
         print("Running")
         cv2.imwrite(rootLoc + "\\images\\captured\\" + f"{imageNumber}.png", frame)
+        obj.addLog(f'Image captured [{imageNumber}.png]')
     cap.release()
     sleep(interval)
-    capture(port, interval, imageNumber)
+    capture(port, interval, imageNumber, obj)
 
 
 def encodeFace(frame):
     encoded = face.face_encodings(frame)
-    print(len(encoded))
     return encoded
 
 
@@ -49,7 +53,7 @@ def compareFace(x, y):
 
 
 # encodes faces from students folder
-def createFaceMesh():
+def createFaceMesh(obj=None):
     pandasData = []
     faceList = os.listdir(rootLoc + "\\images\\students")
     print("Images in folder:", faceList)
@@ -59,26 +63,26 @@ def createFaceMesh():
         face = cv2.imread(rootLoc + "\\images\\students\\" + file)
         encode = encodeFace(face)
         pandasData.append((sID, sName, encode))
+        obj.addLog(f"Encoded [{sName}]")
     dataframe = pd.DataFrame(pandasData)
     dataframe.columns = ["ID", "Name", "FaceData"]
     dataframe.to_json(rootLoc + "\\faceMesh.json")
     students = dataframe.loc[:, ["ID", "Name"]]
     students.to_csv(rootLoc + "\\Data\\template\\students.csv", index=False)
     createTemplate()
+    obj.addLog("Encoding completed ✅")
     return 1
 
 
 # returns list of faces in given image(frame)
-def predictFace(frame, bgProcess=0):
+def predictFace(frame, bgProcess=0, obj=None):
     imageNumber = 0
-    showBox = 1
     import numpy as np
-
     capturedFaces = np.array(encodeFace(frame))
     encodedFaces = pd.read_json(rootLoc + "\\faceMesh.json")
     predictedFaces = []
     names = []
-    if showBox:
+    if not bgProcess:
         loc = face.face_locations(frame)
         print(len(loc))
     name = None
@@ -119,18 +123,18 @@ def predictFace(frame, bgProcess=0):
             cv2.putText(
                 frame,
                 name,
-                (loc[i][3] + 6, loc[i][2], 6),
+                (loc[i][3] + 6, loc[i][2] + 6),
                 cv2.FONT_HERSHEY_COMPLEX,
                 2,
                 (255, 255, 255),
                 3,
             )
     if not bgProcess:
-        frame = cv2.resize(frame, (0, 0), fx=0.4, fy=0.4)
+        frame = cv2.resize(frame, (600, 270))
         imageNumber += 1
         cv2.imwrite(rootLoc + "\\images\\predicted\\" + "predicted.png", frame)
-        app.updateImage()
-    print("Names predicted:", tuple(set(names)))
+        obj.updateImage()
+    obj.addLog("Names predicted: "+ str(list(set(names))))
     return tuple(set(predictedFaces))
 
 
@@ -228,8 +232,8 @@ def putAttendence(names=[]):
         else:
             s = "A"
         print(register.iloc[i])
-        if register[str(period)].iloc[i] != "P":
-            register[str(period)].iloc[i] = s
+        if register.loc[i, str(period)] != "P":
+            register.loc[i, str(period)] = s
     print(register)
     register.to_csv(filePath, index=False)
     return filePath
@@ -266,7 +270,7 @@ class App:
         self.ipAddressStr = tk.StringVar(value=settings("cameraIP"))
         self.captureInterval = tk.IntVar(value=settings("captureInterval"))
         self.bgProcess = tk.IntVar(value=settings("bgProcess"))
-        self.aboutStr = tk.StringVar(value="This is Visio Attend")
+        self.aboutStr = tk.StringVar(value="👆\nThis page can give you a grasp of what's happening here\n\nThis is VisioAttend\nAn Automated face-recognigation attendence system")
         self.startOrStop = tk.StringVar(value="Start")
         self.stop = 0
         
@@ -454,6 +458,11 @@ class App:
     def run(self):
         self.mainwindow.mainloop()
         
+    def addLog(self, log):
+        old = self.aboutStr.get()
+        new = log + '\n' + old
+        self.aboutStr.set(new)
+        
     def updateImage(self):
         imgLoc = rootLoc + "\\images\\predicted\\"
         if os.path.exists(imgLoc + "predicted.png"):
@@ -470,10 +479,10 @@ class App:
         settings("cameraIP", str(self.ipAddressStr.get()))
         settings("captureInterval", int(self.captureInterval.get()))
         settings("bgProcess", int(self.bgProcess.get()))
-        cameraLoop = threading.Thread(target=capture, args=(self.ipAddressStr.get(), self.captureInterval.get(), 0))
+        cameraLoop = threading.Thread(target=capture, args=(self.ipAddressStr.get(), self.captureInterval.get(), 0, self))
         cameraLoop.start()
-        # predictLoop = threading.Thread(target=self.startLoop())
-        # predictLoop.start()
+        startLoop = threading.Thread(target=self.startLoop)
+        startLoop.start()
         
     def preStop(self):
         path = rootLoc + "\\images\\captured"
@@ -482,17 +491,27 @@ class App:
         
     def startLoop(self):
         if self.stop:
+            self.addLog('< VisioAttend stopped >')
             return 0
         path = rootLoc + "\\images\\captured\\"
         imgList = []
         for root, dirs, files in os.walk(path):
             imgList = [int(f.split('.')[0]) for f in files]
         if len(imgList) == 0:
-            sleep(10)
+            sleep(3)
             self.startLoop()
-        img = path + "\\" + str(min(imgList)) + ".png"
-        predictedFaces = predictFace(img, self.bgProcess)
-        putAttendence(predictedFaces)
+            return
+        img = path +  str(min(imgList)) + ".png"
+        frame = cv2.imread(img)
+        if self.stop:
+            self.addLog('< VisioAttend stopped >')
+            return 0
+        names = predictFace(frame, self.bgProcess.get(), self)
+        if self.stop:
+            self.addLog('< VisioAttend stopped >')
+            return 0
+        putAttendence(names)
+        self.addLog('----------------------------------------------  Attendance updated  ----------------------------------------------')
         os.remove(img)
         self.startLoop()
 
@@ -501,13 +520,15 @@ class App:
         if type == "Start":
             self.stop = 0
             self.startOrStop.set("Stop")
-            self.preStart()
+            self.addLog('VisioAttend started')
+            start = threading.Thread(target=self.preStart)
+            start.start()
         else:
             self.stop = 1
             self.startOrStop.set("Start")
+            self.addLog('Stopping process...')
             self.preStop()
             
-
     def btnViewAll(self):
         path = rootLoc+"\\Data\\DayRecord"
         path = os.path.realpath(path)
@@ -528,7 +549,7 @@ class App:
         os.startfile(path)
 
     def btnEncode(self):
-        encode_thread = threading.Thread(target=createFaceMesh)
+        encode_thread = threading.Thread(target=createFaceMesh, args=(self,))
         encode_thread.start()
 
 from flask import Flask, render_template, request, jsonify, send_file, Response
@@ -539,12 +560,17 @@ def sendRegister():
     date = datetime.now()
     fileName = f"{date.year}-{date.month}-{date.day}.csv"
     path = rootLoc + "\\Data\\DayRecord\\"
-
-    # Read the CSV file as a string
+    fileExist = fileSearch(fileName, path)
+    if not fileExist:
+        path = rootLoc + "\\Data\\Template\\"
+        fileName = "dailyRecord.csv"
     with open(path + fileName, 'r') as file:
         csv_content = file.read()
-
     return Response(csv_content, mimetype='text/plain')
+
+@web.route("/visioattend/edit") 
+def edit():
+    return render_template('index.html')
 
 @web.route('/visioattend', methods=['POST'])
 def receive_json():
